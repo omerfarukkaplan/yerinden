@@ -9,50 +9,48 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-export default function DetailPage() {
+export default function Detail() {
   const { id } = useParams();
-  const [item, setItem] = useState<any>(null);
+  const [listing, setListing] = useState<any>(null);
 
   useEffect(() => {
-    async function load() {
-      const { data } = await supabase
-        .from("listings")
-        .select(`
-          *,
-          producers ( phone, address )
-        `)
-        .eq("id", id)
-        .single();
+    fetchListing();
+    supabase.rpc("increment_view", { listing_id: id });
+  }, []);
 
-      setItem(data);
-    }
-    load();
-  }, [id]);
+  async function fetchListing() {
+    const { data } = await supabase
+      .from("listings")
+      .select("*, producers(phone)")
+      .eq("id", id)
+      .single();
 
-  if (!item) return null;
+    setListing(data);
+  }
+
+  if (!listing) return null;
 
   return (
-    <div className="p-10 space-y-6 max-w-4xl mx-auto">
+    <div className="max-w-5xl mx-auto p-8">
+      <img
+        src={listing.images?.[0]}
+        className="w-full h-96 object-cover rounded-xl"
+      />
 
-      <div className="grid grid-cols-2 gap-6">
-        {item.images?.map((img: string, i: number) => (
-          <img key={i} src={img} className="rounded-xl" />
-        ))}
-      </div>
-
-      <h1 className="text-3xl font-bold">{item.title}</h1>
-
+      <h1 className="text-3xl font-bold mt-6">{listing.title}</h1>
       <p className="text-xl text-green-600 font-bold">
-        {item.price} TL
+        {listing.price} TL
       </p>
 
-      <p>{item.description}</p>
+      <p className="mt-4">{listing.description}</p>
 
-      <div className="border p-6 rounded-xl bg-gray-50">
-        <p><strong>Adres:</strong> {item.producers.address}</p>
-        <p><strong>Telefon:</strong> {item.producers.phone}</p>
-      </div>
-
+      <a
+        href={`https://wa.me/${listing.producers.phone}`}
+        target="_blank"
+        className="mt-6 inline-block bg-green-500 text-white px-6 py-3 rounded-lg"
+      >
+        WhatsApp ile İletişime Geç
+      </a>
     </div>
   );
 }
