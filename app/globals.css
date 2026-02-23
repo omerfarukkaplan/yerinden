@@ -1,0 +1,9 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body { @apply bg-bg text-white; }
+.card { @apply bg-black/40 backdrop-blur-lg rounded-xl p-6 border border-neon/30 shadow-lg; }
+.btn { @apply bg-neon text-black font-bold px-6 py-3 rounded-lg shadow-[0_0_20px_#00f5ff]; }
+.neon-text { @apply text-neon drop-shadow-[0_0_10px_#00f5ff]; }
