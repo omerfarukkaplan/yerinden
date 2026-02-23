@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Header() {
   const [user, setUser] = useState<any>(null);
@@ -33,28 +34,65 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow mb-6">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between">
-        <Link href="/" className="text-2xl font-bold text-green-600">
-          Yerinden
+    <header className="bg-white shadow">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+
+        {/* LOGO */}
+        <Link href="/" className="flex items-center gap-3">
+          <Image
+            src="/logo.png"
+            width={40}
+            height={40}
+            alt="Yerinden"
+          />
+          <span className="text-xl font-bold text-green-600">
+            Yerinden
+          </span>
         </Link>
 
+        {/* NAVIGATION */}
         <div className="flex items-center gap-6">
+
+          {/* Premium badge */}
           {profile?.plan === "premium" && (
             <span className="bg-purple-600 text-white px-3 py-1 text-xs rounded">
               PREMIUM
             </span>
           )}
 
+          {/* Satıcı Paneli */}
+          {user && (
+            <Link
+              href="/seller"
+              className="text-sm hover:text-green-600"
+            >
+              Satıcı Paneli
+            </Link>
+          )}
+
+          {/* Admin */}
           {profile?.role === "admin" && (
-            <Link href="/admin" className="text-red-600">
+            <Link
+              href="/admin"
+              className="text-sm text-red-600"
+            >
               Admin
             </Link>
           )}
 
-          {user && (
+          {/* Giriş / Çıkış */}
+          {!user ? (
+            <Link
+              href="/login"
+              className="bg-green-600 text-white px-4 py-2 rounded text-sm"
+            >
+              Giriş Yap
+            </Link>
+          ) : (
             <>
-              <span className="text-sm">{user.email}</span>
+              <span className="text-sm text-gray-600">
+                {user.email}
+              </span>
               <button
                 onClick={logout}
                 className="text-red-500 text-sm"
