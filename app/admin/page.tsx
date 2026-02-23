@@ -1,47 +1,38 @@
-"use client";
+'use client'
 
-import { createClient } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react'
+import { supabase } from '../../lib/supabase'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export default function AdminDashboard() {
 
-export default function Admin() {
-  const [listings, setListings] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null)
 
   useEffect(() => {
-    fetchListings();
-  }, []);
+    const load = async () => {
+      const { data } = await supabase
+        .from('listings')
+        .select('view_count, whatsapp_clicks')
 
-  async function fetchListings() {
-    const { data } = await supabase.from("listings").select("*");
-    setListings(data || []);
-  }
+      const totalViews = data?.reduce((a,b)=>a+(b.view_count||0),0)
+      const totalClicks = data?.reduce((a,b)=>a+(b.whatsapp_clicks||0),0)
 
-  async function sponsor(id: string) {
-    await supabase
-      .from("listings")
-      .update({ is_sponsored: true })
-      .eq("id", id);
+      setStats({
+        views: totalViews,
+        clicks: totalClicks,
+        rate: totalViews ? ((totalClicks/totalViews)*100).toFixed(1) : 0
+      })
+    }
 
-    fetchListings();
-  }
+    load()
+  }, [])
 
   return (
-    <div className="p-8">
-      {listings.map((l) => (
-        <div key={l.id} className="flex justify-between border p-3 mb-2">
-          <span>{l.title}</span>
-          <button
-            onClick={() => sponsor(l.id)}
-            className="bg-yellow-400 px-3 py-1 rounded"
-          >
-            Sponsor Yap
-          </button>
-        </div>
-      ))}
+    <div className="p-10">
+      <h1 className="text-3xl mb-6">Conversion Dashboard</h1>
+
+      <p>Toplam Görüntülenme: {stats?.views}</p>
+      <p>Toplam WhatsApp: {stats?.clicks}</p>
+      <p>Dönüşüm Oranı: %{stats?.rate}</p>
     </div>
-  );
+  )
 }

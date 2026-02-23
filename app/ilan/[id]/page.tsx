@@ -1,56 +1,87 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-import { useParams } from "next/navigation";
+import { useEffect, useState } from 'react'
+import { supabase } from '../../../lib/supabase'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export default function ListingDetail({ params }: any) {
 
-export default function Detail() {
-  const { id } = useParams();
-  const [listing, setListing] = useState<any>(null);
+  const [listing, setListing] = useState<any>(null)
 
   useEffect(() => {
-    fetchListing();
-    supabase.rpc("increment_view", { listing_id: id });
-  }, []);
+    const load = async () => {
 
-  async function fetchListing() {
-    const { data } = await supabase
-      .from("listings")
-      .select("*, producers(phone)")
-      .eq("id", id)
-      .single();
+      // İlanı çek
+      const { data } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('id', params.id)
+        .single()
 
-    setListing(data);
+      if (!data) return
+
+      setListing(data)
+
+      // 👁 View artır
+      await supabase
+        .from('listings')
+        .update({
+          view_count: (data.view_count || 0) + 1
+        })
+        .eq('id', data.id)
+    }
+
+    load()
+  }, [])
+
+  if (!listing) return <div className="p-10">Yükleniyor...</div>
+
+  // ✅ WhatsApp conversion fonksiyonu
+  const handleWhatsApp = async () => {
+
+    await supabase
+      .from('listings')
+      .update({
+        whatsapp_clicks: (listing.whatsapp_clicks || 0) + 1
+      })
+      .eq('id', listing.id)
+
+    window.open(
+      `https://wa.me/${listing.phone}?text=Merhaba ${listing.title} ilanınız hakkında bilgi almak istiyorum`,
+      '_blank'
+    )
   }
 
-  if (!listing) return null;
-
   return (
-    <div className="max-w-5xl mx-auto p-8">
-      <img
-        src={listing.images?.[0]}
-        className="w-full h-96 object-cover rounded-xl"
-      />
+    <div className="p-10 max-w-4xl mx-auto">
 
-      <h1 className="text-3xl font-bold mt-6">{listing.title}</h1>
-      <p className="text-xl text-green-600 font-bold">
+      <h1 className="text-3xl font-bold mb-4">
+        {listing.title}
+      </h1>
+
+      <p className="text-2xl text-green-600 mb-4">
         {listing.price} TL
       </p>
 
-      <p className="mt-4">{listing.description}</p>
+      <p className="mb-6">
+        {listing.description}
+      </p>
 
-      <a
-        href={`https://wa.me/${listing.producers.phone}`}
-        target="_blank"
-        className="mt-6 inline-block bg-green-500 text-white px-6 py-3 rounded-lg"
-      >
-        WhatsApp ile İletişime Geç
-      </a>
+      <div className="flex gap-4">
+
+        {/* WhatsApp CTA */}
+        <button
+          onClick={handleWhatsApp}
+          className="bg-green-500 hover:bg-green-600 transition text-white px-6 py-3 rounded-xl shadow-lg"
+        >
+          WhatsApp ile İletişim
+        </button>
+
+        {/* Görüntülenme */}
+        <div className="flex items-center text-gray-500">
+          👁 {listing.view_count}
+        </div>
+
+      </div>
     </div>
-  );
+  )
 }
