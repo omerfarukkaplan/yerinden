@@ -1,47 +1,45 @@
-'use client'
+"use client";
 
-import { useEffect,useState } from 'react'
-import { supabase } from '../../../lib/supabase'
+import { useEffect, useState } from "react";
+import { supabase } from "../../../lib/supabase";
 
-export default function Analytics(){
+export default function SellerAnalytics() {
+  const [stats, setStats] = useState({
+    totalListings: 0,
+    totalViews: 0,
+  });
 
-  const [data,setData]=useState<any[]>([])
-
-  useEffect(()=>{
-    const load=async()=>{
-      const { data:{user} } = await supabase.auth.getUser()
-      if(!user) return
+  useEffect(() => {
+    const loadStats = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
 
       const { data } = await supabase
-        .from('listings')
-        .select('title,view_count,whatsapp_clicks')
-        .eq('producer_id',user.id)
+        .from("listings")
+        .select("*")
+        .eq("user_id", user?.id);
 
-      setData(data || [])
-    }
+      const totalViews = data?.reduce(
+        (sum: number, item: any) => sum + item.views,
+        0
+      );
 
-    load()
-  },[])
+      setStats({
+        totalListings: data?.length || 0,
+        totalViews: totalViews || 0,
+      });
+    };
+
+    loadStats();
+  }, []);
 
   return (
     <div>
-      <h1 className="text-3xl mb-6">Analytics</h1>
+      <h1 className="text-2xl font-bold mb-6">Analytics</h1>
 
-      {data.map(item=>{
-        const rate =
-          item.view_count
-            ? ((item.whatsapp_clicks/item.view_count)*100).toFixed(1)
-            : 0
-
-        return (
-          <div key={item.title} className="border p-4 mb-4">
-            <p>{item.title}</p>
-            <p>👁 {item.view_count}</p>
-            <p>💬 {item.whatsapp_clicks}</p>
-            <p>Conversion %{rate}</p>
-          </div>
-        )
-      })}
+      <div className="bg-white p-6 shadow w-96">
+        <p>Toplam İlan: {stats.totalListings}</p>
+        <p>Toplam Görüntülenme: {stats.totalViews}</p>
+      </div>
     </div>
-  )
+  );
 }

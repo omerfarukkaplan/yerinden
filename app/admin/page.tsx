@@ -1,38 +1,40 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabase";
 
-export default function AdminDashboard() {
-
-  const [stats, setStats] = useState<any>(null)
+export default function AdminPage() {
+  const [revenue, setRevenue] = useState(0);
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
-    const load = async () => {
+    const loadRevenue = async () => {
       const { data } = await supabase
-        .from('listings')
-        .select('view_count, whatsapp_clicks')
+        .from("payments")
+        .select("*")
+        .eq("status", "paid");
 
-      const totalViews = data?.reduce((a,b)=>a+(b.view_count||0),0)
-      const totalClicks = data?.reduce((a,b)=>a+(b.whatsapp_clicks||0),0)
+      const total = data?.reduce(
+        (sum: number, p: any) => sum + p.amount,
+        0
+      );
 
-      setStats({
-        views: totalViews,
-        clicks: totalClicks,
-        rate: totalViews ? ((totalClicks/totalViews)*100).toFixed(1) : 0
-      })
-    }
+      setRevenue(total || 0);
+      setCount(data?.length || 0);
+    };
 
-    load()
-  }, [])
+    loadRevenue();
+  }, []);
 
   return (
-    <div className="p-10">
-      <h1 className="text-3xl mb-6">Conversion Dashboard</h1>
+    <div>
+      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
 
-      <p>Toplam Görüntülenme: {stats?.views}</p>
-      <p>Toplam WhatsApp: {stats?.clicks}</p>
-      <p>Dönüşüm Oranı: %{stats?.rate}</p>
+      <div className="bg-white p-6 shadow w-96">
+        <p>Toplam Premium Satış:</p>
+        <p className="text-3xl font-bold">{revenue} TL</p>
+        <p>{count} abonelik</p>
+      </div>
     </div>
-  )
+  );
 }

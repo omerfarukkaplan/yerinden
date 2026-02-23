@@ -1,36 +1,66 @@
-import PremiumBanner from './components/PremiumBanner'
-import { supabase } from '../lib/supabase'
-import Link from 'next/link'
+"use client";
 
-export default async function Home() {
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { supabase } from "../lib/supabase";
 
-  const { data: listings } = await supabase
-    .from('listings')
-    .select('*')
-    .eq('status', 'active')
-    .order('sponsor_approved', { ascending: false })
-    .order('created_at', { ascending: false })
+export default function HomePage() {
+  const [listings, setListings] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+
+  const loadListings = async () => {
+    const { data } = await supabase
+      .from("listings")
+      .select("*")
+      .textSearch("search_vector", search)
+      .order("boost_until", { ascending: false })
+      .order("is_featured", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    setListings(data || []);
+  };
+
+  useEffect(() => {
+    loadListings();
+  }, [search]);
 
   return (
-    <div className="p-10 max-w-7xl mx-auto">
+    <div className="p-10">
+      <input
+        placeholder="İlan ara..."
+        className="border p-3 mb-6 w-full"
+        onChange={(e) => setSearch(e.target.value)}
+      />
 
-      <PremiumBanner />
+      <div className="grid md:grid-cols-3 gap-6">
+        {listings.map((item) => {
+          const isBoosted =
+            item.boost_until &&
+            new Date(item.boost_until) > new Date();
 
-      <h1 className="text-3xl font-bold mb-8">İlanlar</h1>
+          return (
+            <Link
+              href={`/ilan/${item.id}`}
+              key={item.id}
+              className="bg-white shadow p-4 relative"
+            >
+              {isBoosted && (
+                <span className="absolute top-2 left-2 bg-purple-600 text-white text-xs px-2 py-1 rounded">
+                  🔥 BOOST
+                </span>
+              )}
 
-      <div className="grid md:grid-cols-4 gap-6">
-        {listings?.map(item => (
-          <Link key={item.id} href={`/ilan/${item.id}`}>
-            <div className="p-5 border rounded-xl hover:scale-105 transition">
-              <h2 className="font-bold">{item.title}</h2>
+              <img
+                src={item.image_url}
+                className="h-48 w-full object-cover mb-4"
+              />
+
+              <h2>{item.title}</h2>
               <p>{item.price} TL</p>
-              <p className="text-sm text-gray-500">
-                👁 {item.view_count}
-              </p>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          );
+        })}
       </div>
     </div>
-  )
+  );
 }
