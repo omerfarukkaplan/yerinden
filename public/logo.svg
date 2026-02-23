@@ -1,9 +1,10 @@
-<svg width="220" height="60" viewBox="0 0 220 60" xmlns="http://www.w3.org/2000/svg">
-  <rect width="220" height="60" fill="#0f172a"/>
-  <text x="15" y="38" font-size="28" font-family="Arial" fill="#39ff14" font-weight="bold">
-    Yer
-  </text>
-  <text x="65" y="38" font-size="28" font-family="Arial" fill="#ffffff" font-weight="bold">
-    inden
+<svg width="60" height="60" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="30" cy="30" r="28" fill="#0f172a" stroke="#39ff14" stroke-width="3"/>
+  <text x="50%" y="55%" text-anchor="middle"
+        fill="#39ff14"
+        font-size="20"
+        font-family="Arial"
+        font-weight="bold">
+    Y
   </text>
 </svg>
