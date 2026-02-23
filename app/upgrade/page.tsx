@@ -1,65 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "../../../lib/supabase";
-import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabase";
 
 export default function UpgradePage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const checkSeller = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return router.push("/login");
+  const handleUpgrade = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
 
-      const { data } = await supabase
-        .from("profiles")
-        .select("role, plan")
-        .eq("id", user.id)
-        .single();
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
 
-      if (data?.role !== "seller") {
-        router.push("/");
-      }
-
-      if (data?.plan === "premium") {
-        router.push("/seller");
-      }
-
-      setLoading(false);
-    };
-
-    checkSeller();
-  }, []);
-
-  if (loading) return <div>Yükleniyor...</div>;
-
-  const openCheckout = () => {
     window.Paddle.Checkout.open({
       items: [
         {
-          priceId: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID,
+          priceId: process.env.NEXT_PUBLIC_PADDLE_PRICE_ID!,
           quantity: 1,
         },
       ],
       customData: {
-        user_id: localStorage.getItem("user_id"),
+        user_id: user.id,
       },
     });
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="border p-10 text-center w-96">
-        <h1 className="text-2xl font-bold mb-6">Premium Üyelik</h1>
-        <p className="text-3xl font-bold mb-6">1299 TL</p>
+    <div className="min-h-screen flex items-center justify-center bg-black text-white">
+      <div className="bg-gray-900 p-10 rounded-xl shadow-xl">
+        <h1 className="text-3xl font-bold mb-6">
+          Premium Üyelik – 1299 TL
+        </h1>
 
         <button
-          onClick={openCheckout}
-          className="bg-green-600 text-white px-6 py-3 w-full"
+          onClick={handleUpgrade}
+          className="bg-purple-600 px-6 py-3 rounded-lg hover:bg-purple-700"
         >
-          Premium Ol
+          Premium’a Geç
         </button>
       </div>
     </div>
