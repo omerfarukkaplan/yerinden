@@ -1,100 +1,89 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "../../../../lib/supabase";
+import { useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
-export default function NewListingPage() {
+export default function NewListing() {
   const router = useRouter();
+
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [files, setFiles] = useState<File[]>([]);
 
-  useEffect(() => {
-    const checkAccess = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return router.push("/login");
+  async function handleUpload() {
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData.user;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("plan")
-        .eq("id", user.id)
-        .single();
+    if (!user) return;
 
-      if (profile?.plan !== "premium") {
-        router.push("/seller/upgrade");
-      }
-    };
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_premium")
+      .eq("id", user.id)
+      .single();
 
-    checkAccess();
-  }, []);
-
-  const handleSubmit = async () => {
-    if (!file) return alert("Fotoğraf zorunlu");
-
-    setLoading(true);
-
-    const { data: { user } } = await supabase.auth.getUser();
-
-    // Upload image
-    const fileName = `${user?.id}-${Date.now()}.jpg`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("listings")
-      .upload(fileName, file);
-
-    if (uploadError) {
-      alert(uploadError.message);
+    if (!profile?.is_premium) {
+      alert("Premium olmadan ilan veremezsin.");
       return;
     }
 
-    const { data: publicUrl } = supabase.storage
-      .from("listings")
-      .getPublicUrl(fileName);
+    let imageUrls: string[] = [];
 
-    // Insert listing
+    for (const file of files) {
+      const fileName = `${Date.now()}-${file.name}`;
+
+      const { data, error } = await supabase.storage
+        .from("giyim-listings")
+        .upload(fileName, file);
+
+      if (!error) {
+        imageUrls.push(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/giyim-listings/${fileName}`
+        );
+      }
+    }
+
     await supabase.from("listings").insert({
-      user_id: user?.id,
+      user_id: user.id,
       title,
-      price: Number(price),
-      image_url: publicUrl.publicUrl,
-      is_featured: true,
+      price,
+      image_urls: imageUrls,
+      is_active: true
     });
 
-    setLoading(false);
-    router.push("/seller");
-  };
+    router.push("/seller/listings");
+  }
 
   return (
-    <div className="max-w-xl mx-auto bg-white p-8 shadow">
-      <h1 className="text-2xl font-bold mb-6">Yeni İlan</h1>
+    <div className="max-w-xl mx-auto mt-10 space-y-4">
+      <h1 className="text-2xl font-bold">Yeni İlan</h1>
 
       <input
+        className="border p-2 w-full"
         placeholder="Başlık"
-        className="border p-3 w-full mb-4"
         onChange={(e) => setTitle(e.target.value)}
       />
 
       <input
-        type="number"
+        className="border p-2 w-full"
         placeholder="Fiyat"
-        className="border p-3 w-full mb-4"
         onChange={(e) => setPrice(e.target.value)}
       />
 
       <input
         type="file"
-        className="mb-4"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
+        multiple
+        onChange={(e) =>
+          setFiles(Array.from(e.target.files || []))
+        }
       />
 
       <button
-        onClick={handleSubmit}
-        disabled={loading}
-        className="bg-green-600 text-white py-3 w-full"
+        onClick={handleUpload}
+        className="bg-green-600 text-white px-4 py-2"
       >
-        {loading ? "Yükleniyor..." : "Yayınla"}
+        Yayınla
       </button>
     </div>
   );

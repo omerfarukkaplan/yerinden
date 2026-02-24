@@ -1,57 +1,45 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
-export default function LoginPage() {
+export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const login = async () => {
+  async function handleLogin() {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (!error) {
-      router.push("/seller");
-    } else {
-      alert(error.message);
-    }
-  };
+    if (!error) router.push("/seller");
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen gap-4">
-      <h1 className="text-2xl font-bold">Giriş Yap</h1>
+    <div className="max-w-md mx-auto mt-20 space-y-4">
+      <h1 className="text-2xl font-bold">Satıcı Giriş</h1>
 
       <input
-        type="email"
+        className="border p-2 w-full"
         placeholder="Email"
-        className="border p-2"
         onChange={(e) => setEmail(e.target.value)}
       />
 
       <input
         type="password"
+        className="border p-2 w-full"
         placeholder="Şifre"
-        className="border p-2"
         onChange={(e) => setPassword(e.target.value)}
       />
 
       <button
-        onClick={login}
-        className="bg-black text-white px-4 py-2"
+        onClick={handleLogin}
+        className="bg-green-600 text-white px-4 py-2 w-full"
       >
         Giriş Yap
-      </button>
-
-      <button
-        onClick={() => router.push("/register")}
-        className="text-blue-500"
-      >
-        Kayıt Ol
       </button>
     </div>
   );

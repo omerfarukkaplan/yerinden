@@ -1,44 +1,39 @@
-"use client";
+import { supabaseAdmin } from "@/lib/supabaseServer";
+import { cookies } from "next/headers";
 
-import { useEffect, useState } from "react";
-import { supabase } from "../../../lib/supabase";
+export default async function Analytics() {
+  const cookieStore = cookies();
+  const userId = cookieStore.get("user-id")?.value;
 
-export default function SellerAnalytics() {
-  const [stats, setStats] = useState({
-    totalListings: 0,
-    totalViews: 0,
-  });
+  const { data: listings } = await supabaseAdmin
+    .from("listings")
+    .select("*")
+    .eq("user_id", userId);
 
-  useEffect(() => {
-    const loadStats = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+  const totalViews = listings?.reduce(
+    (acc, l) => acc + l.view_count,
+    0
+  );
 
-      const { data } = await supabase
-        .from("listings")
-        .select("*")
-        .eq("user_id", user?.id);
-
-      const totalViews = data?.reduce(
-        (sum: number, item: any) => sum + item.views,
-        0
-      );
-
-      setStats({
-        totalListings: data?.length || 0,
-        totalViews: totalViews || 0,
-      });
-    };
-
-    loadStats();
-  }, []);
+  const totalClicks = listings?.reduce(
+    (acc, l) => acc + l.whatsapp_clicks,
+    0
+  );
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Analytics</h1>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Analytics</h1>
 
-      <div className="bg-white p-6 shadow w-96">
-        <p>Toplam İlan: {stats.totalListings}</p>
-        <p>Toplam Görüntülenme: {stats.totalViews}</p>
+      <div className="grid grid-cols-3 gap-6">
+        <div className="p-6 border rounded-xl">
+          <h2>Toplam Görüntülenme</h2>
+          <p className="text-xl font-bold">{totalViews}</p>
+        </div>
+
+        <div className="p-6 border rounded-xl">
+          <h2>WhatsApp Tıklama</h2>
+          <p className="text-xl font-bold">{totalClicks}</p>
+        </div>
       </div>
     </div>
   );

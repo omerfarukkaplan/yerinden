@@ -1,19 +1,10 @@
+import { supabaseAdmin } from "@/lib/supabaseServer";
 import { notFound } from "next/navigation";
-import { supabase } from "../../../../lib/supabase";
 
-interface Props {
-  params: {
-    city: string;
-    district: string;
-    category: string;
-  };
-}
-
-export default async function Page({ params }: Props) {
+export default async function Page({ params }: any) {
   const { city, district, category } = params;
 
-  // Şehir bul
-  const { data: cityData } = await supabase
+  const { data: cityData } = await supabaseAdmin
     .from("cities")
     .select("*")
     .eq("slug", city)
@@ -21,45 +12,37 @@ export default async function Page({ params }: Props) {
 
   if (!cityData) return notFound();
 
-  // İlçe bul
-  const { data: districtData } = await supabase
+  const { data: districtData } = await supabaseAdmin
     .from("districts")
     .select("*")
     .eq("slug", district)
-    .eq("city_id", cityData.id)
     .single();
 
-  if (!districtData) return notFound();
-
-  // Kategori bul
-  const { data: categoryData } = await supabase
+  const { data: categoryData } = await supabaseAdmin
     .from("categories")
     .select("*")
     .eq("slug", category)
     .single();
 
-  if (!categoryData) return notFound();
-
-  // İlanları getir
-  const { data: listings } = await supabase
+  const { data: listings } = await supabaseAdmin
     .from("listings")
-    .select("*")
+    .select("*, profiles(is_premium)")
     .eq("city_id", cityData.id)
     .eq("district_id", districtData.id)
-    .eq("category_id", categoryData.id);
+    .eq("category_id", categoryData.id)
+    .eq("is_active", true)
+    .order("boost_until", { ascending: false })
+    .order("created_at", { ascending: false });
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-6">
+    <div>
+      <h1 className="text-2xl font-bold">
         {cityData.name} {districtData.name} {categoryData.name}
       </h1>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-4 gap-6 mt-6">
         {listings?.map((item) => (
-          <div key={item.id} className="border p-4 rounded-lg">
-            <h2 className="font-semibold">{item.title}</h2>
-            <p>{item.price} ₺</p>
-          </div>
+          <div key={item.id}>{item.title}</div>
         ))}
       </div>
     </div>
