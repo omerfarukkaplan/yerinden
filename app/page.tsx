@@ -1,58 +1,99 @@
-"use client";
+import { supabaseAdmin } from "@/lib/supabaseServer"
+import Link from "next/link"
 
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
-import ListingCard from "./components/ListingCard";
+export default async function HomePage() {
 
-export default function HomePage() {
-  const [listings, setListings] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: cities } = await supabaseAdmin
+    .from("cities")
+    .select("*")
+    .order("name")
 
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from("listings")
-        .select("*")
-        .order("boost_until", { ascending: false })
-        .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: false });
-
-      setListings(data || []);
-      setLoading(false);
-    };
-
-    load();
-  }, []);
+  const { data: listings } = await supabaseAdmin
+    .from("listings")
+    .select("*")
+    .eq("category_slug", "giyim")
+    .order("score", { ascending: false })
+    .limit(12)
 
   return (
-    <div>
+    <main className="max-w-7xl mx-auto px-4 py-16">
 
       {/* HERO */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4">
-          Türkiye'nin Yeni Nesil İlan Platformu
+      <section className="text-center mb-20">
+        <h1 className="text-5xl font-extrabold mb-4 neon-text">
+          Türkiye'nin Yeni Nesil Giyim Platformu
         </h1>
-        <p className="text-gray-600 mb-6">
-          Premium satıcılar, boost sistemi ve gelişmiş filtreleme.
+        <p className="text-gray-600 mb-8">
+          Premium satıcılar • Boost sistemi • Gelişmiş filtreleme
         </p>
-      </div>
 
-      {/* LOADING */}
-      {loading && <p>Yükleniyor...</p>}
+        <Link
+          href="/seller/listings/new"
+          className="neon-button"
+        >
+          İlan Ver
+        </Link>
+      </section>
 
-      {/* BOŞ */}
-      {!loading && listings.length === 0 && (
-        <div className="text-center text-gray-500">
-          Henüz ilan yok.
+      {/* ŞEHİR FİLTRE */}
+      <section className="mb-16">
+        <div className="glass-card p-8 rounded-3xl shadow-xl">
+          <h2 className="text-2xl font-bold mb-6 text-green-700">
+            Şehrine Göre Giyim İlanları
+          </h2>
+
+          <form action="/search" className="grid md:grid-cols-3 gap-4">
+            <select
+              name="city"
+              className="select-premium"
+              required
+            >
+              <option value="">İl Seç</option>
+              {cities?.map((city: any) => (
+                <option key={city.slug} value={city.slug}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              name="district"
+              className="select-premium"
+            >
+              <option value="">İlçe Seç</option>
+            </select>
+
+            <button className="neon-button">
+              Filtrele
+            </button>
+          </form>
         </div>
-      )}
+      </section>
 
-      {/* GRID */}
-      <div className="grid md:grid-cols-3 gap-6">
-        {listings.map((item) => (
-          <ListingCard key={item.id} item={item} />
-        ))}
-      </div>
-    </div>
-  );
+      {/* PREMIUM LISTINGS */}
+      <section>
+        <h2 className="text-2xl font-bold mb-8 text-green-700">
+          Öne Çıkan Giyim İlanları
+        </h2>
+
+        <div className="grid md:grid-cols-4 gap-8">
+          {listings?.map((item: any) => (
+            <Link key={item.id} href={`/ilan/${item.id}`}>
+              <div className="premium-card">
+                <img
+                  src={item.cover_image}
+                  className="rounded-xl mb-4 h-48 w-full object-cover"
+                />
+                <h3 className="font-semibold text-lg">{item.title}</h3>
+                <p className="text-green-600 font-bold mt-2">
+                  {item.price} ₺
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+    </main>
+  )
 }
